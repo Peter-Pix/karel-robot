@@ -81,6 +81,30 @@ export default function App() {
         {showTour && <TourGuide onClose={() => setShowTour(false)} />}
       </AnimatePresence>
 
+      <div className="sticky top-0 z-50 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md border-b border-gray-200 dark:border-white/[0.06]">
+        <div className="mx-auto flex items-center justify-center gap-2 px-4 py-1.5 text-xs">
+          <span className="text-gray-400 dark:text-zinc-500">🔬</span>
+          <span className="text-gray-500 dark:text-zinc-500">Součást AI ekosystému</span>
+          <a
+            href="https://petrpiskacek.cloud"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-gray-700 dark:text-zinc-300 hover:text-gray-900 dark:hover:text-white transition-colors"
+          >
+            AI Lab
+          </a>
+          <span className="text-gray-300 dark:text-zinc-700">·</span>
+          <a
+            href="https://4rap.cz"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-gray-700 dark:text-zinc-300 hover:text-gray-900 dark:hover:text-white transition-colors"
+          >
+            4rap.cz
+          </a>
+        </div>
+      </div>
+
       <AppHeader 
         onRestart={handleRestart} 
         onOpenSettings={() => setIsSettingsOpen(true)} 
