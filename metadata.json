@@ -1,0 +1,8 @@
+{
+  "name": "Karel Robot",
+  "description": "AI e-mailový administrátor.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

@@ -1,0 +1,25 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: "SF Pro Display", "Inter", system-ui, sans-serif;
+  --color-brand: #d9a043;
+  --color-brand-hover: #c58e33;
+}
+
+@layer base {
+  html {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  
+  /* Prevent iOS zoom on inputs */
+  input[type="text"], 
+  input[type="email"], 
+  textarea {
+    font-size: 16px !important;
+  }
+}
