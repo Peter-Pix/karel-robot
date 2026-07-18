@@ -17,7 +17,7 @@ export default function App() {
   const [result, setResult] = useState<AnalysisResult | null>(null);
   
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [selectedModel, setSelectedModel] = useState('local-demo');
+  const [selectedModel, setSelectedModel] = useState('deepseek-v4-flash');
   const [showTour, setShowTour] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
 
