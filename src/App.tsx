@@ -10,6 +10,7 @@ import { ViewState, EmailInput, AnalysisResult } from './types';
 import { LocalDemoEmailAnalyzer, ApiEmailAnalyzer, EmailAnalyzer } from './lib/emailAnalysis';
 
 import { AiEmployeeFeature } from './components/AiEmployeeFeature';
+import { AppFooter } from './components/AppFooter';
 
 export default function App() {
   const [viewState, setViewState] = useState<ViewState>('form');
@@ -124,6 +125,8 @@ export default function App() {
           setIsSettingsOpen(false);
         }}
       />
+
+      <AppFooter />
     </div>
   );
 }
