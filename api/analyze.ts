@@ -2,9 +2,19 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 
 const OLLAMA_API_URL = "https://ollama.com/api/v1/chat/completions";
 const OLLAMA_FALLBACK_URL = "https://ollama.com/api/generate";
+const OLLAMA_TIMEOUT_MS = 25000;
+const DOUBLE_CHECK_THRESHOLD = 0.80;
 
 const SYSTEM_PROMPT = `Jsi Karel Robot, AI e-mailový administrátor.
 Tvým úkolem je analyzovat příchozí e-mail od zákazníka a rozhodnout o dalším kroku.
+
+## KARELŮV HLAS
+- Mluv přirozeně, jako zkušený operátor zákaznické podpory
+- U běžných dotazů: stručný, vstřícný, občas s lehkým humorem
+- U reklamací a problémů: vážný, empatický, profesionální
+- Nikdy nepoužívej "Děkujeme za Váš e-mail" — to je strojové
+- Místo toho: "Ahoj, mám to tu." nebo "Díky za zprávu, podívám se na to."
+- Přizpůsob tón situaci, ne používej šablonu
 
 ## PRAVIDLA PRO ROZHODOVÁNÍ
 - **Výpověď smlouvy, právní jazyk, hrozba soudem** → akce "ESCALATE"
@@ -20,26 +30,24 @@ Tvým úkolem je analyzovat příchozí e-mail od zákazníka a rozhodnout o dal
 - **hourlyCost**: 0 nebo 400–600 (0 pro automatické, 400–600 pro eskalaci)
 - **confidence**: 0.00–1.00 (jak jsi si jistý svým rozhodnutím)
 
-## POŽADAVKY NA ČEŠTINU
-- **output** musí být přirozená čeština, jako by ji psal rodilý mluvčí
-- Žádné strojové fráze, žádné "Děkujeme za Váš e-mail" v každé odpovědi
-- Přizpůsob tón podle situace: formální pro reklamace, vstřícný pro dotazy, stručný pro technické problémy
+## POŽADAVKY NA VÝSTUP
+- output: přirozená čeština, jako rodilý mluvčí, přizpůsobená situaci
 - outputTitle: krátký, výstižný název (max 60 znaků)
-- actionLabel: jedna věta co se stane (např. "Připravit návrh odpovědi")
-- category: kategorie e-mailu (např. "Reklamace / Technický problém")
-- customerStatus: status zákazníka (např. "Registrovaný zákazník", "Neznámý odesílatel")
-- recipient: komu předat (např. "Zákaznická podpora", "Technické oddělení")
-- reasons: 2–4 důvody proč jsi se tak rozhodl (každý max 100 znaků)
+- actionLabel: jedna věta co se stane
+- category: kategorie e-mailu
+- customerStatus: status zákazníka
+- recipient: komu předat
+- reasons: 2–4 důvody (každý max 100 znaků)
 
 ## DVOJITÁ KONTROLA (self-review)
-Než odešleš finální JSON, proveď tyto kroky:
-1. Zkontroluj, jestli akce odpovídá pravidlům nahoře
-2. Zkontroluj, jestli čísla jsou v mantinelech
-3. Zkontroluj, jestli čeština v output zní přirozeně (ne strojově)
+Než odešleš finální JSON:
+1. Zkontroluj akci podle pravidel
+2. Zkontroluj čísla v mantinelech
+3. Zkontroluj jestli čeština zní přirozeně
 4. Pokud něco nesedí, oprav to
 
 ## VÝSTUPNÍ FORMÁT
-Odpověz POUZE validním JSONem podle tohoto schématu:
+Odpověz POUZE validním JSONem:
 {
   "action": "DRAFT" | "ACKNOWLEDGE" | "ESCALATE",
   "actionLabel": string,
@@ -55,8 +63,49 @@ Odpověz POUZE validním JSONem podle tohoto schématu:
   "confidence": number
 }`;
 
+function generateRequestId(): string {
+  return `req_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function log(level: string, msg: string, meta: Record<string, unknown> = {}) {
+  const entry = { timestamp: new Date().toISOString(), level, msg, ...meta };
+  if (level === "error") {
+    console.error(JSON.stringify(entry));
+  } else {
+    console.log(JSON.stringify(entry));
+  }
+}
+
+function setCorsHeaders(res: VercelResponse) {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+}
+
+async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs: number): Promise<Response> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetch(url, { ...options, signal: controller.signal });
+    return response;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  const requestId = generateRequestId();
+  const startTime = Date.now();
+
+  setCorsHeaders(res);
+
+  // Handle CORS preflight
+  if (req.method === "OPTIONS") {
+    return res.status(204).end();
+  }
+
   if (req.method !== "POST") {
+    log("warn", "Method not allowed", { requestId, method: req.method });
     return res.status(405).json({ error: "Method not allowed" });
   }
 
@@ -66,66 +115,88 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const apiKey = process.env.OLLAMA_API_KEY;
 
     if (!input?.subject || !input?.body) {
+      log("warn", "Missing required fields", { requestId, hasSubject: !!input?.subject, hasBody: !!input?.body });
       return res.status(400).json({ error: "Missing required fields: subject, body" });
     }
 
-    const headers: Record<string, string> = {
+    const ollamaHeaders: Record<string, string> = {
       "Content-Type": "application/json",
     };
     if (apiKey) {
-      headers["Authorization"] = `Bearer ${apiKey}`;
+      ollamaHeaders["Authorization"] = `Bearer ${apiKey}`;
     }
 
     const userPrompt = `Email sender: ${input.sender || "unknown"}\nSubject: ${input.subject}\nBody: ${input.body}`;
 
-    const response = await fetch(OLLAMA_API_URL, {
-      method: "POST",
-      headers,
-      body: JSON.stringify({
-        model: model || "llama3.1",
-        response_format: { type: "json_object" },
-        messages: [
-          { role: "system", content: SYSTEM_PROMPT },
-          { role: "user", content: userPrompt },
-        ],
-        stream: false,
-      }),
-    });
+    log("info", "Calling Ollama API", { requestId, model, inputLength: input.body.length });
+
+    const response = await fetchWithTimeout(
+      OLLAMA_API_URL,
+      {
+        method: "POST",
+        headers: ollamaHeaders,
+        body: JSON.stringify({
+          model,
+          response_format: { type: "json_object" },
+          messages: [
+            { role: "system", content: SYSTEM_PROMPT },
+            { role: "user", content: userPrompt },
+          ],
+          stream: false,
+        }),
+      },
+      OLLAMA_TIMEOUT_MS
+    );
 
     if (!response.ok) {
       if (response.status === 404) {
-        const fallbackResponse = await fetch(OLLAMA_FALLBACK_URL, {
-          method: "POST",
-          headers,
-          body: JSON.stringify({
-            model: model || "llama3.1",
-            prompt: SYSTEM_PROMPT + "\n\n" + userPrompt,
-            stream: false,
-            format: "json",
-          }),
-        });
+        log("warn", "Model not found, trying fallback", { requestId, model });
+        const fallbackResponse = await fetchWithTimeout(
+          OLLAMA_FALLBACK_URL,
+          {
+            method: "POST",
+            headers: ollamaHeaders,
+            body: JSON.stringify({
+              model,
+              prompt: SYSTEM_PROMPT + "\n\n" + userPrompt,
+              stream: false,
+              format: "json",
+            }),
+          },
+          OLLAMA_TIMEOUT_MS
+        );
         if (!fallbackResponse.ok) {
-          throw new Error(
-            `Ollama fallback API returned ${fallbackResponse.status}: ${await fallbackResponse.text()}`
-          );
+          const errText = await fallbackResponse.text();
+          log("error", "Fallback API failed", { requestId, status: fallbackResponse.status, error: errText });
+          return res.status(503).json({ error: "Služba je dočasně nedostupná. Zkuste to prosím později." });
         }
         const data = await fallbackResponse.json();
-        return res.json(JSON.parse(data.response));
+        const result = JSON.parse(data.response);
+        const latency = Date.now() - startTime;
+        log("info", "Analysis complete (fallback)", { requestId, model, latencyMs: latency, action: result.action, confidence: result.confidence });
+        return res.json(result);
       }
-      throw new Error(`Ollama API returned ${response.status}: ${await response.text()}`);
+      const errText = await response.text();
+      log("error", "Ollama API error", { requestId, status: response.status, error: errText });
+      return res.status(503).json({ error: "Služba je dočasně nedostupná. Zkuste to prosím později." });
     }
 
     const data = await response.json();
     const resultText = data.choices?.[0]?.message?.content;
     if (!resultText) {
-      throw new Error("Empty response from Ollama API");
+      log("error", "Empty response from Ollama", { requestId });
+      return res.status(503).json({ error: "Služba vrátila prázdnou odpověď. Zkuste to prosím znovu." });
     }
 
     // Parse first pass
     const firstPass = JSON.parse(resultText);
 
-    // Double-check: self-review and improve
-    const reviewPrompt = `Zkontroluj a vylepši tento výstup analýzy e-mailu.
+    // Double-check: only if confidence is below threshold
+    let finalResult = firstPass;
+    if (firstPass.confidence < DOUBLE_CHECK_THRESHOLD) {
+      log("info", "Low confidence, running double-check", { requestId, confidence: firstPass.confidence });
+
+      const reviewPrompt = `Zkontroluj a vylepši tento výstup analýzy e-mailu.
 
 Původní e-mail:
 Odesílatel: ${input.sender || "neznámý"}
@@ -136,50 +207,68 @@ Aktuální výstup:
 ${JSON.stringify(firstPass, null, 2)}
 
 Pravidla pro kontrolu:
-1. Je akce správná podle pravidel? (výpověď→ESCALATE, kompenzace→ACKNOWLEDGE, běžný dotaz→DRAFT)
+1. Je akce správná podle pravidel?
 2. Jsou humanMinutes v rozmezí 0-15?
 3. Jsou aiSeconds v rozmezí 1-10?
 4. Je hourlyCost 0 nebo 400-600?
 5. Je confidence 0.00-1.00?
-6. Zní čeština v output přirozeně? (ne strojově, jako rodilý mluvčí)
-7. Je outputTitle krátký a výstižný? (max 60 znaků)
-8. Jsou reasons relevantní a stručné? (2-4 důvody, každý max 100 znaků)
+6. Zní čeština přirozeně?
+7. Je outputTitle max 60 znaků?
+8. Jsou reasons 2-4, každý max 100 znaků?
 
-Pokud něco nesedí, oprav to. Pokud vše sedí, vrať stejný JSON.
-Odpověz POUZE validním JSONem.`;
+Pokud něco nesedí, oprav to. Odpověz POUZE validním JSONem.`;
 
-    const reviewResponse = await fetch(OLLAMA_API_URL, {
-      method: "POST",
-      headers,
-      body: JSON.stringify({
-        model: model || "deepseek-v4-flash",
-        response_format: { type: "json_object" },
-        messages: [
-          { role: "system", content: "Jsi kvalitní kontrolor výstupů AI. Kontroluješ a vylepšuješ analýzy e-mailů. Odpovídáš POUZE validním JSONem." },
-          { role: "user", content: reviewPrompt },
-        ],
-        stream: false,
-      }),
-    });
+      try {
+        const reviewResponse = await fetchWithTimeout(
+          OLLAMA_API_URL,
+          {
+            method: "POST",
+            headers: ollamaHeaders,
+            body: JSON.stringify({
+              model,
+              response_format: { type: "json_object" },
+              messages: [
+                { role: "system", content: "Jsi kvalitní kontrolor výstupů AI. Odpovídáš POUZE validním JSONem." },
+                { role: "user", content: reviewPrompt },
+              ],
+              stream: false,
+            }),
+          },
+          OLLAMA_TIMEOUT_MS
+        );
 
-    if (reviewResponse.ok) {
-      const reviewData = await reviewResponse.json();
-      const reviewText = reviewData.choices?.[0]?.message?.content;
-      if (reviewText) {
-        try {
-          const improved = JSON.parse(reviewText);
-          res.json(improved);
-          return;
-        } catch {
-          // If review JSON is invalid, fall through to first pass
+        if (reviewResponse.ok) {
+          const reviewData = await reviewResponse.json();
+          const reviewText = reviewData.choices?.[0]?.message?.content;
+          if (reviewText) {
+            try {
+              finalResult = JSON.parse(reviewText);
+              log("info", "Double-check improved result", { requestId, oldConfidence: firstPass.confidence, newConfidence: finalResult.confidence });
+            } catch {
+              log("warn", "Double-check returned invalid JSON, using first pass", { requestId });
+            }
+          }
         }
+      } catch {
+        log("warn", "Double-check timed out, using first pass", { requestId });
       }
+    } else {
+      log("info", "High confidence, skipping double-check", { requestId, confidence: firstPass.confidence });
     }
 
-    // Fallback: return first pass if review failed
-    res.json(firstPass);
+    const latency = Date.now() - startTime;
+    log("info", "Analysis complete", { requestId, model, latencyMs: latency, action: finalResult.action, confidence: finalResult.confidence });
+
+    res.json(finalResult);
   } catch (error) {
-    console.error("Error running analysis:", error);
-    res.status(500).json({ error: "Failed to run analysis" });
+    const latency = Date.now() - startTime;
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    log("error", "Unhandled error", { requestId, latencyMs: latency, error: errorMsg });
+
+    if (error instanceof DOMException && error.name === "AbortError") {
+      return res.status(503).json({ error: "Analýza trvala příliš dlouho. Zkuste to prosím znovu s kratším e-mailem." });
+    }
+
+    res.status(503).json({ error: "Služba je dočasně nedostupná. Zkuste to prosím později." });
   }
 }

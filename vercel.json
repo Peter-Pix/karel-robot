@@ -6,8 +6,32 @@
     { "source": "/api/(.*)", "destination": "/api/$1" },
     { "source": "/(.*)", "destination": "/index.html" }
   ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://ollama.com; font-src 'self' data:"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        }
+      ]
+    }
+  ],
   "functions": {
-    "api/analyze.ts": { "maxDuration": 30 },
-    "api/models.ts": { "maxDuration": 15 }
+    "api/analyze.ts": { "maxDuration": 60 },
+    "api/models.ts": { "maxDuration": 15 },
+    "api/health.ts": { "maxDuration": 10 }
   }
 }
