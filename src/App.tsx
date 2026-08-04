@@ -33,10 +33,14 @@ export default function App() {
   // We keep a ref to ensure any lingering timers in sub-components don't
   // affect our state if we've unmounted or restarted them manually.
   const activeProcessRef = useRef(false);
+  // Records when the user submitted — used to report the honest end-to-end
+  // time (submit → result) in the metrics card.
+  const submitStartRef = useRef(0);
 
   const handleSubmit = async (data: EmailInput) => {
     if (activeProcessRef.current) return; // Prevent duplicate submissions
     activeProcessRef.current = true;
+    submitStartRef.current = Date.now();
     setEmailData(data);
     setViewState('processing');
     
@@ -46,6 +50,11 @@ export default function App() {
         : new ApiEmailAnalyzer(selectedModel);
         
       const analysisResult = await analyzer.analyze(data);
+      // Report the real time the user waited (submit → result). This is the
+      // honest figure — the model's self-reported aiSeconds and even the pure
+      // server latency understate what the user actually experiences.
+      const elapsedSeconds = Math.max(1, Math.round((Date.now() - submitStartRef.current) / 1000));
+      analysisResult.aiSeconds = elapsedSeconds;
       setResult(analysisResult);
     } catch (error) {
       console.error("Analysis failed:", error);

@@ -46,3 +46,20 @@ export function formatNumber(value: number, decimals = 1) {
     minimumFractionDigits: value % 1 === 0 ? 0 : decimals
   }).format(value);
 }
+
+/**
+ * Format a ratio/multiplier with adaptive precision, Apple-style:
+ * - < 100   → 2 decimals  (e.g. 89,33)
+ * - 100–999 → 1 decimal   (e.g. 342,2)
+ * - >= 1000 → 0 decimals  (e.g. 1233)
+ */
+export function formatMultiplier(value: number) {
+  const abs = Math.abs(value);
+  let decimals = 0;
+  if (abs < 100) decimals = 2;
+  else if (abs < 1000) decimals = 1;
+  return new Intl.NumberFormat('cs-CZ', {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  }).format(value);
+}

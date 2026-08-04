@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { calculateSavings, formatCZK, formatNumber } from '../lib/savingsCalculator';
-import { Clock, ShieldCheck, TrendingUp, User } from 'lucide-react';
+import { calculateSavings, formatCZK, formatMultiplier, formatNumber } from '../lib/savingsCalculator';
+import { Clock, ShieldCheck, TrendingUp, User, Zap, Check } from 'lucide-react';
 
 interface SavingsMetricsProps {
   humanMinutes: number;
@@ -13,14 +13,16 @@ export function SavingsMetrics({ humanMinutes, aiSeconds, hourlyCost }: SavingsM
   // How many times faster Karel is vs a human operator (honest, derived from
   // real inputs). Guards against division by zero.
   const speedRatio =
-    aiSeconds > 0 ? Math.max(1, Math.round((humanMinutes * 60) / aiSeconds)) : 1;
+    aiSeconds > 0 ? Math.max(1, (humanMinutes * 60) / aiSeconds) : 1;
   // Stable per-mount demo ID (not regenerated on every render).
   const [demoId] = useState(() =>
     Math.random().toString(36).substr(2, 9).toUpperCase()
   );
+  // Fully automated emails have no human cost to save — reframe honestly.
+  const isFullyAutomated = hourlyCost <= 0;
 
   return (
-    <div className="mt-16 pt-16 border-t border-gray-100 dark:border-gray-800 transition-all">
+    <div className="mt-16 pt-16 border-t border-gray-200 dark:border-gray-800 transition-all">
       <div className="mb-12 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
         <div>
           <span className="text-[11px] font-semibold tracking-widest text-gray-400 uppercase block mb-2">Analýza efektivity</span>
@@ -31,8 +33,8 @@ export function SavingsMetrics({ humanMinutes, aiSeconds, hourlyCost }: SavingsM
         </div>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-12">
-        
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-12">
+
         {/* Card 1: Human */}
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-2 mb-2">
@@ -57,28 +59,43 @@ export function SavingsMetrics({ humanMinutes, aiSeconds, hourlyCost }: SavingsM
           <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 font-light">Reálný čas analýzy</div>
         </div>
 
-        {/* Card 3: Saved Time */}
+        {/* Card 3: Speed ratio */}
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-2 mb-2">
-            <Clock className="w-4 h-4 text-gray-400" />
+            <Zap className="w-4 h-4 text-gray-400" />
             <span className="text-[10px] font-semibold uppercase tracking-widest text-gray-400">Rychlost</span>
           </div>
           <div className="text-4xl md:text-5xl font-light text-gray-900 dark:text-gray-100 tracking-tight">
-            <span className="font-semibold">{speedRatio}×</span>
+            <span className="font-semibold">{formatMultiplier(speedRatio)}×</span>
           </div>
-          <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 font-light">rychlejší než ruční zpracování</div>
+          <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 font-light">rychlejší než ručně</div>
         </div>
 
-        {/* Card 4: Cost Saved */}
+        {/* Card 4: Human cost / effort saved — adaptive, honest */}
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-2 mb-2">
-            <TrendingUp className="w-4 h-4 text-gray-400" />
-            <span className="text-[10px] font-semibold uppercase tracking-widest text-gray-400">Úspora nákladů</span>
+            {isFullyAutomated ? (
+              <Check className="w-4 h-4 text-emerald-500" />
+            ) : (
+              <TrendingUp className="w-4 h-4 text-gray-400" />
+            )}
+            <span className="text-[10px] font-semibold uppercase tracking-widest text-gray-400">Lidská práce</span>
           </div>
-          <div className="text-4xl md:text-5xl font-light text-gray-900 dark:text-gray-100 tracking-tight">
-            {formatCZK(savedCost)}
-          </div>
-          <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 font-light">Při sazbě {formatCZK(hourlyCost)}/h</div>
+          {isFullyAutomated ? (
+            <>
+              <div className="text-4xl md:text-5xl font-light text-emerald-500 dark:text-emerald-400 tracking-tight">
+                0 <span className="text-lg font-normal text-gray-400">min</span>
+              </div>
+              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 font-light">vyřízeno zcela automaticky</div>
+            </>
+          ) : (
+            <>
+              <div className="text-4xl md:text-5xl font-light text-gray-900 dark:text-gray-100 tracking-tight">
+                {formatCZK(savedCost)}
+              </div>
+              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 font-light">úspora při sazbě {formatCZK(hourlyCost)}/h</div>
+            </>
+          )}
         </div>
 
       </div>
