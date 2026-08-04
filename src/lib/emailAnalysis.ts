@@ -5,7 +5,7 @@ export interface EmailAnalyzer {
 }
 
 export class ApiEmailAnalyzer implements EmailAnalyzer {
-  constructor(private modelName: string = "deepseek-v4-flash") {}
+  constructor(private modelName: string = "gemma4:31b") {}
 
   async analyze(input: EmailInput): Promise<AnalysisResult> {
     const base = import.meta.env.BASE_URL || '/';

@@ -121,7 +121,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const model = req.body?.model || "deepseek-v4-flash";
+    const model = req.body?.model || "gemma4:31b";
     const { input } = req.body;
     const apiKey = process.env.OLLAMA_API_KEY;
 
