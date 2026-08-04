@@ -125,7 +125,8 @@ export default function App() {
           {viewState === 'processing' && (
             <ProcessingView 
               key="processing" 
-              onComplete={handleProcessingComplete} 
+              onComplete={handleProcessingComplete}
+              isComplete={!!result}
             />
           )}
           {viewState === 'result' && result && (

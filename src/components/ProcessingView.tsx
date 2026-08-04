@@ -8,6 +8,7 @@ import { DataReadout } from './DataReadout';
 
 interface ProcessingViewProps {
   onComplete: () => void;
+  isComplete: boolean;
 }
 
 const STAGES = [
@@ -45,7 +46,7 @@ const stageVariants = {
   exit: { opacity: 0, y: -28, filter: 'blur(14px)', scale: 0.97 },
 };
 
-export function ProcessingView({ onComplete }: ProcessingViewProps) {
+export function ProcessingView({ onComplete, isComplete }: ProcessingViewProps) {
   const [currentStage, setCurrentStage] = useState(0);
   const shouldReduceMotion = useReducedMotion();
 
@@ -61,7 +62,12 @@ export function ProcessingView({ onComplete }: ProcessingViewProps) {
           timer = window.setTimeout(advanceStage, stageDuration);
           return prev + 1;
         } else {
-          timer = window.setTimeout(onComplete, stageDuration);
+          // Last stage reached — stay here until the API result is ready.
+          // If the result is already available, finish now; otherwise the
+          // isComplete effect below will call onComplete when it arrives.
+          if (isComplete) {
+            onComplete();
+          }
           return prev;
         }
       });
@@ -74,8 +80,17 @@ export function ProcessingView({ onComplete }: ProcessingViewProps) {
     };
   }, [onComplete, shouldReduceMotion]);
 
-  const stage = STAGES[currentStage];
+  // When the animation reaches the final stage and the API result arrives,
+  // transition to the result view. This handles a slow API (> animation time):
+  // the last stage stays visible (success badge) until the result is ready.
   const isFinal = currentStage === STAGES.length - 1;
+  useEffect(() => {
+    if (isFinal && isComplete) {
+      onComplete();
+    }
+  }, [isFinal, isComplete, onComplete]);
+
+  const stage = STAGES[currentStage];
 
   return (
     <motion.div
