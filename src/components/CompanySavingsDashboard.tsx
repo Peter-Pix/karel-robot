@@ -1,10 +1,11 @@
 import React, { useState, useMemo } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
-import { X, Info, Sparkles, Zap, TrendingUp, Timer } from 'lucide-react';
-import { formatCZK, formatMultiplier, formatNumber, calculateExtendedSavings } from '../lib/savingsCalculator';
+import { X, Info, Sparkles, Zap, TrendingUp, Timer, Check, Eye } from 'lucide-react';
+import { formatCZK, formatMultiplier, formatNumber, calculateExtendedSavings, savedMinutesWithReview } from '../lib/savingsCalculator';
 
 const WORKING_DAYS_MONTH = 21;
+const REVIEW_MINUTES = 1.5; // quick check an operator spends on non-automated emails
 
 // Karel's signature catchphrases — keeps the brand voice alive in the copy.
 const KAREL_LINES = [
@@ -22,11 +23,15 @@ type ModalType = 'time-monthly' | 'cost-monthly' | 'time-yearly' | 'cost-yearly'
 
 export function CompanySavingsDashboard({ humanMinutes, aiSeconds, hourlyCost }: CompanySavingsDashboardProps) {
   const [volume, setVolume] = useState(80);
+  // Share of emails Karel handles fully on his own (0.5–1). The rest needs a
+  // quick operator check — this keeps the math honest.
+  const [automationRate, setAutomationRate] = useState(0.7);
   const [activeModal, setActiveModal] = useState<ModalType>(null);
   const shouldReduceMotion = useReducedMotion();
 
-  // Real per-email savings, derived from the actual analysis — not a fake constant.
-  const savedMinutesPerEmail = Math.max(0.1, humanMinutes - aiSeconds / 60);
+  // Real per-email savings, accounting for the share of emails that need a
+  // human review (not everything is 100% automated).
+  const savedMinutesPerEmail = savedMinutesWithReview(humanMinutes, automationRate, REVIEW_MINUTES);
   // Effective hourly cost: fall back to a realistic operator rate if the model
   // reported 0 (fully automated emails have no human cost to save).
   const effectiveHourlyCost = hourlyCost > 0 ? hourlyCost : 420;
@@ -40,11 +45,11 @@ export function CompanySavingsDashboard({ humanMinutes, aiSeconds, hourlyCost }:
   // Speed ratio of this specific email (honest, from real inputs).
   const speedRatio = aiSeconds > 0 ? (humanMinutes * 60) / aiSeconds : 1;
 
-  // Time allocation donut (static organizational framing — how operators split work).
+  // Time allocation donut — dynamic: how much Karel does alone vs operator review.
   const pieData = useMemo(() => [
-    { name: 'Kontrola návrhů AI', value: 15, color: '#E5E5EA' },
-    { name: 'Péče a řešení eskalací', value: 85, color: '#1C1C1E' },
-  ], []);
+    { name: 'Karel odbaví sám', value: Math.round(automationRate * 100), color: '#1C1C1E' },
+    { name: 'Operátor jen zkontroluje', value: Math.round((1 - automationRate) * 100), color: '#E5E5EA' },
+  ], [automationRate]);
 
   const itemAnim = shouldReduceMotion
     ? {}
@@ -81,31 +86,63 @@ export function CompanySavingsDashboard({ humanMinutes, aiSeconds, hourlyCost }:
         </motion.p>
       </motion.div>
 
-      {/* Volume Slider */}
-      <motion.div className="max-w-4xl mx-auto mb-20 px-0 sm:px-6" {...itemAnim}>
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-4">
-          <label htmlFor="volume" className="block text-[11px] font-semibold uppercase tracking-widest text-gray-400">
-            Denní objem e-mailů
-          </label>
-          <div className="text-5xl md:text-6xl font-light text-gray-900 dark:text-gray-100 tracking-tight">
-            {formatNumber(volume, 0)} <span className="text-2xl text-gray-400 font-light lowercase">zpráv / den</span>
+      {/* Controls — volume + automation (honest, human-first) */}
+      <motion.div className="max-w-4xl mx-auto mb-20 px-0 sm:px-6 space-y-12" {...itemAnim}>
+        <div>
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-4">
+            <label htmlFor="volume" className="block text-[11px] font-semibold uppercase tracking-widest text-gray-400">
+              Denní objem e-mailů
+            </label>
+            <div className="text-5xl md:text-6xl font-light text-gray-900 dark:text-gray-100 tracking-tight">
+              {formatNumber(volume, 0)} <span className="text-2xl text-gray-400 font-light lowercase">zpráv / den</span>
+            </div>
+          </div>
+          <div className="relative py-4">
+            <input
+              id="volume"
+              type="range"
+              min="10"
+              max="5000"
+              step="10"
+              value={volume}
+              onChange={(e) => setVolume(Number(e.target.value))}
+              className="w-full h-1 bg-gray-200 dark:bg-gray-800 rounded-full appearance-none cursor-pointer accent-black dark:accent-brand outline-none focus:ring-4 focus:ring-black/5 dark:focus:ring-brand/10 transition-all hover:bg-gray-300 dark:hover:bg-gray-700"
+            />
+          </div>
+          <div className="flex justify-between text-[11px] text-gray-400 font-medium mt-2 tracking-widest uppercase">
+            <span>Jednotlivec (10)</span>
+            <span>Korporace (5000)</span>
           </div>
         </div>
-        <div className="relative py-4">
-          <input
-            id="volume"
-            type="range"
-            min="10"
-            max="5000"
-            step="10"
-            value={volume}
-            onChange={(e) => setVolume(Number(e.target.value))}
-            className="w-full h-1 bg-gray-200 dark:bg-gray-800 rounded-full appearance-none cursor-pointer accent-black dark:accent-brand outline-none focus:ring-4 focus:ring-black/5 dark:focus:ring-brand/10 transition-all hover:bg-gray-300 dark:hover:bg-gray-700"
-          />
-        </div>
-        <div className="flex justify-between text-[11px] text-gray-400 font-medium mt-2 tracking-widest uppercase">
-          <span>Jednotlivec (10)</span>
-          <span>Korporace (5000)</span>
+
+        <div>
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-6 gap-4">
+            <div>
+              <label htmlFor="automation" className="block text-[11px] font-semibold uppercase tracking-widest text-gray-400 mb-1">
+                Podíl, který Karel zvládne sám
+              </label>
+              <p className="text-xs text-gray-500 dark:text-gray-400 font-light">Zbytek jen letmo zkontroluje operátor — reálný provoz.</p>
+            </div>
+            <div className="text-4xl md:text-5xl font-light text-gray-900 dark:text-gray-100 tracking-tight">
+              {Math.round(automationRate * 100)}<span className="text-2xl text-gray-400 font-light"> %</span>
+            </div>
+          </div>
+          <div className="relative py-4">
+            <input
+              id="automation"
+              type="range"
+              min="50"
+              max="100"
+              step="5"
+              value={Math.round(automationRate * 100)}
+              onChange={(e) => setAutomationRate(Number(e.target.value) / 100)}
+              className="w-full h-1 bg-gray-200 dark:bg-gray-800 rounded-full appearance-none cursor-pointer accent-black dark:accent-brand outline-none focus:ring-4 focus:ring-black/5 dark:focus:ring-brand/10 transition-all hover:bg-gray-300 dark:hover:bg-gray-700"
+            />
+          </div>
+          <div className="flex justify-between text-[11px] text-gray-400 font-medium mt-2 tracking-widest uppercase">
+            <span>Více lidského dohledu</span>
+            <span>Plná automatizace</span>
+          </div>
         </div>
       </motion.div>
 
@@ -119,13 +156,13 @@ export function CompanySavingsDashboard({ humanMinutes, aiSeconds, hourlyCost }:
         >
           <div className="flex items-center gap-2 mb-2">
             <Timer className="w-3.5 h-3.5 text-gray-400" />
-            <span className="text-[10px] font-semibold uppercase tracking-widest text-gray-400">Ušetřený čas měsíčně</span>
+            <span className="text-[10px] font-semibold uppercase tracking-widest text-gray-400">Vrácený čas za měsíc</span>
             <Info className="w-3 h-3 text-gray-300 dark:text-gray-600" />
           </div>
           <div className="text-3xl md:text-4xl font-medium text-gray-900 dark:text-gray-100 tracking-tight mt-1">
-            {formatNumber(savedHoursPerMonth, 0)} h
+            {formatNumber(savedHoursPerMonth, 0)} <span className="text-xl text-gray-400 font-light">hodin</span>
           </div>
-          <div className="text-xs text-gray-400 mt-1 font-light">z {formatNumber(volume, 0)} zpráv denně</div>
+          <div className="text-xs text-gray-400 mt-1 font-light">zpět pro váš tým</div>
         </motion.button>
 
         <motion.button
@@ -136,13 +173,13 @@ export function CompanySavingsDashboard({ humanMinutes, aiSeconds, hourlyCost }:
         >
           <div className="flex items-center gap-2 mb-2">
             <TrendingUp className="w-3.5 h-3.5 text-gray-400" />
-            <span className="text-[10px] font-semibold uppercase tracking-widest text-gray-400">Úspora nákladů měsíčně</span>
+            <span className="text-[10px] font-semibold uppercase tracking-widest text-gray-400">Vrácené peníze za měsíc</span>
             <Info className="w-3 h-3 text-gray-300 dark:text-gray-600" />
           </div>
           <div className="text-3xl md:text-4xl font-medium text-gray-900 dark:text-gray-100 tracking-tight mt-1">
             {formatCZK(savedCzkPerMonth)}
           </div>
-          <div className="text-xs text-gray-400 mt-1 font-light">při {formatCZK(effectiveHourlyCost)}/h</div>
+          <div className="text-xs text-gray-400 mt-1 font-light">místo režijních nákladů</div>
         </motion.button>
 
         <motion.button
@@ -153,13 +190,13 @@ export function CompanySavingsDashboard({ humanMinutes, aiSeconds, hourlyCost }:
         >
           <div className="flex items-center gap-2 mb-2">
             <Sparkles className="w-3.5 h-3.5 text-gray-400" />
-            <span className="text-[10px] font-semibold uppercase tracking-widest text-gray-400">Ušetřený čas ročně</span>
+            <span className="text-[10px] font-semibold uppercase tracking-widest text-gray-400">Vrácený čas za rok</span>
             <Info className="w-3 h-3 text-gray-300 dark:text-gray-600" />
           </div>
           <div className="text-3xl md:text-4xl font-medium text-gray-900 dark:text-gray-100 tracking-tight mt-1">
-            {formatNumber(savedHoursPerYear, 0)} h
+            {formatNumber(savedHoursPerYear / 8, 0)} <span className="text-xl text-gray-400 font-light">prac. dní</span>
           </div>
-          <div className="text-xs text-gray-400 mt-1 font-light">≈ {formatNumber(savedHoursPerYear / 8, 0)} prac. dní</div>
+          <div className="text-xs text-gray-400 mt-1 font-light">kolega navíc zdarma</div>
         </motion.button>
 
         <motion.button
@@ -170,24 +207,24 @@ export function CompanySavingsDashboard({ humanMinutes, aiSeconds, hourlyCost }:
         >
           <div className="flex items-center gap-2 mb-2">
             <Zap className="w-3.5 h-3.5 text-gray-900 dark:text-brand" />
-            <span className="text-[10px] font-semibold uppercase tracking-widest text-gray-900 dark:text-brand">Roční úspora nákladů</span>
+            <span className="text-[10px] font-semibold uppercase tracking-widest text-gray-900 dark:text-brand">Roční návratnost</span>
             <Info className="w-3 h-3 text-gray-300 dark:text-gray-600" />
           </div>
           <div className="text-3xl md:text-4xl font-medium text-gray-900 dark:text-brand tracking-tight mt-1">
             {formatCZK(savedCzkPerYear)}
           </div>
-          <div className="text-xs text-gray-400 mt-1 font-light">návratnost za první rok</div>
+          <div className="text-xs text-gray-400 mt-1 font-light">z první investice do AI</div>
         </motion.button>
       </div>
 
       {/* Charts Grid — area chart removed (was "na nic") */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 pt-10 border-t border-gray-100 dark:border-gray-800">
 
-        {/* Donut Chart — time allocation */}
+        {/* Donut Chart — automation vs review split */}
         <motion.div className="flex flex-col" {...itemAnim} transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}>
-          <span className="text-[10px] font-semibold tracking-widest text-gray-400 uppercase block mb-1">Organizace práce</span>
-          <h3 className="font-semibold text-gray-900 dark:text-gray-100 text-xl mb-1 tracking-tight">Rozložení času s AI</h3>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mb-2 font-light">Operátoři se věnují lidem, ne rutině.</p>
+          <span className="text-[10px] font-semibold tracking-widest text-gray-400 uppercase block mb-1">Jak to funguje</span>
+          <h3 className="font-semibold text-gray-900 dark:text-gray-100 text-xl mb-1 tracking-tight">Karel sám, nebo s dohledem?</h3>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-2 font-light">Většinu odbaví sám. Zbytek jen letmo zkontrolujete — bez psaní a hledání.</p>
           <div className="grow w-full min-h-[220px] flex items-center justify-center">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
@@ -332,7 +369,7 @@ export function CompanySavingsDashboard({ humanMinutes, aiSeconds, hourlyCost }:
                   <h3 className="text-2xl font-extrabold text-gray-900 dark:text-gray-100 tracking-tight mb-2">Ušetřený čas měsíčně</h3>
                   <div className="text-4xl font-extrabold text-gray-900 dark:text-gray-100 tracking-tight mb-6">{formatNumber(savedHoursPerMonth, 0)} <span className="text-xl text-gray-400 font-medium">hodin</span></div>
                   <div className="space-y-4 text-sm text-gray-500 dark:text-gray-400 leading-relaxed font-sans">
-                    <p>Na tomto e-mailu Karel ušetřil <strong className="text-gray-900 dark:text-gray-100">{formatNumber(savedMinutesPerEmail, 1)} min</strong>. Přeneseno na {formatNumber(volume, 0)} zpráv denně × {WORKING_DAYS_MONTH} pracovních dní to dělá:</p>
+                    <p>Na tomto e-mailu by operátor strávil <strong className="text-gray-900 dark:text-gray-100">{formatNumber(humanMinutes, 1)} min</strong>. Karel {Math.round(automationRate * 100)} % zpráv odbaví sám, zbytek jen letmo zkontrolujete (~{REVIEW_MINUTES} min). Výsledná úspora: <strong className="text-gray-900 dark:text-gray-100">{formatNumber(savedMinutesPerEmail, 1)} min na e-mail</strong>.</p>
                     <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-xl font-mono text-xs border border-gray-100 dark:border-gray-700 text-gray-700 dark:text-gray-300">
                       ({formatNumber(volume, 0)} × {formatNumber(savedMinutesPerEmail, 1)} min) × {WORKING_DAYS_MONTH} / 60 = {formatNumber(savedHoursPerMonth, 0)} h
                     </div>

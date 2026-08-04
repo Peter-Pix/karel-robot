@@ -11,15 +11,42 @@ export function calculateSavings(humanMinutes: number, aiSeconds: number, hourly
   };
 }
 
-export function calculateExtendedSavings(savedMinutesPerEmail: number, hourlyCost: number, emailsPerDay: number) {
+/**
+ * Realistic per-email savings that accounts for operator review.
+ * Not every email is fully automated — a share still needs a quick human
+ * review instead of the full manual work.
+ *
+ * @param humanMinutes   time a human would spend doing it manually
+ * @param automationRate 0..1 share of emails Karel handles fully on his own
+ * @param reviewMinutes  quick check time an operator spends on the rest (default 1.5)
+ * @returns minutes Karel actually saves on one email
+ */
+export function savedMinutesWithReview(
+  humanMinutes: number,
+  automationRate: number,
+  reviewMinutes = 1.5
+) {
+  const reviewedShare = Math.max(0, 1 - automationRate);
+  // Automated share: 0 human time. Reviewed share: operator spends reviewMinutes
+  // instead of the full humanMinutes.
+  const savedPerEmail = humanMinutes - reviewedShare * reviewMinutes;
+  return Math.max(0, savedPerEmail);
+}
+
+export function calculateExtendedSavings(
+  savedMinutesPerEmail: number,
+  hourlyCost: number,
+  emailsPerDay: number,
+  workingDays = 21
+) {
   const savedHoursPerDay = (savedMinutesPerEmail / 60) * emailsPerDay;
   const savedCostPerDay = savedHoursPerDay * hourlyCost;
-  
+
   const savedHoursPerWeek = savedHoursPerDay * 5; // 5 pracovních dní
   const savedCostPerWeek = savedCostPerDay * 5;
 
-  const savedHoursPerMonth = savedHoursPerDay * 21; // průměrně 21 pracovních dní
-  const savedCostPerMonth = savedCostPerDay * 21;
+  const savedHoursPerMonth = savedHoursPerDay * workingDays;
+  const savedCostPerMonth = savedCostPerDay * workingDays;
 
   const savedHoursPerYear = savedHoursPerMonth * 12; // 12 měsíců
   const savedCostPerYear = savedCostPerMonth * 12;
