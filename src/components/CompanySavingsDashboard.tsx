@@ -146,74 +146,74 @@ export function CompanySavingsDashboard({ humanMinutes, aiSeconds, hourlyCost }:
         </div>
       </motion.div>
 
-      {/* Main Metrics — cinematic cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 md:gap-12 mb-20 max-w-5xl mx-auto">
+      {/* Main Metrics — editorial zigzag, each on its own row */}
+      <div className="max-w-5xl mx-auto mb-24 space-y-24 md:space-y-28">
         <motion.button
           onClick={() => setActiveModal('time-monthly')}
-          className="text-left cursor-pointer transition-all hover:opacity-70 active:opacity-50 outline-none flex flex-col group"
+          className="w-full cursor-pointer transition-all hover:opacity-80 active:opacity-60 outline-none flex flex-col group md:block md:text-left"
           {...itemAnim}
-          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+          transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
         >
-          <div className="flex items-center gap-2 mb-2">
-            <Timer className="w-3.5 h-3.5 text-gray-400" />
-            <span className="text-[10px] font-semibold uppercase tracking-widest text-gray-400">Vrácený čas za měsíc</span>
+          <div className="flex items-center gap-2 mb-3">
+            <Timer className="w-4 h-4 text-gray-400" />
+            <span className="text-xs font-semibold uppercase tracking-widest text-gray-400">Vrácený čas za měsíc</span>
             <Info className="w-3 h-3 text-gray-300 dark:text-gray-600" />
           </div>
-          <div className="text-3xl md:text-4xl font-medium text-gray-900 dark:text-gray-100 tracking-tight mt-1">
-            {formatNumber(savedHoursPerMonth, 0)} <span className="text-xl text-gray-400 font-light">hodin</span>
+          <div className="text-6xl md:text-8xl font-extralight text-gray-900 dark:text-gray-100 tracking-tight">
+            {formatNumber(savedHoursPerMonth, 0)} <span className="text-3xl md:text-4xl text-gray-400 font-light">hodin</span>
           </div>
-          <div className="text-xs text-gray-400 mt-1 font-light">zpět pro váš tým</div>
+          <div className="text-base text-gray-400 mt-3 font-light">zpět pro váš tým</div>
         </motion.button>
 
         <motion.button
           onClick={() => setActiveModal('cost-monthly')}
-          className="text-left cursor-pointer transition-all hover:opacity-70 active:opacity-50 outline-none flex flex-col group"
+          className="w-full cursor-pointer transition-all hover:opacity-80 active:opacity-60 outline-none flex flex-col group md:block md:text-right"
           {...itemAnim}
-          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1], delay: 0.05 }}
+          transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1], delay: 0.08 }}
         >
-          <div className="flex items-center gap-2 mb-2">
-            <TrendingUp className="w-3.5 h-3.5 text-gray-400" />
-            <span className="text-[10px] font-semibold uppercase tracking-widest text-gray-400">Vrácené peníze za měsíc</span>
+          <div className="flex items-center gap-2 mb-3 md:justify-end">
+            <TrendingUp className="w-4 h-4 text-gray-400" />
+            <span className="text-xs font-semibold uppercase tracking-widest text-gray-400">Vrácené peníze za měsíc</span>
             <Info className="w-3 h-3 text-gray-300 dark:text-gray-600" />
           </div>
-          <div className="text-3xl md:text-4xl font-medium text-gray-900 dark:text-gray-100 tracking-tight mt-1">
+          <div className="text-6xl md:text-8xl font-extralight text-gray-900 dark:text-gray-100 tracking-tight">
             {formatCZK(savedCzkPerMonth)}
           </div>
-          <div className="text-xs text-gray-400 mt-1 font-light">místo režijních nákladů</div>
+          <div className="text-base text-gray-400 mt-3 font-light">místo režijních nákladů</div>
         </motion.button>
 
         <motion.button
           onClick={() => setActiveModal('time-yearly')}
-          className="text-left cursor-pointer transition-all hover:opacity-70 active:opacity-50 outline-none flex flex-col group"
+          className="w-full cursor-pointer transition-all hover:opacity-80 active:opacity-60 outline-none flex flex-col group md:block md:text-left"
           {...itemAnim}
-          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
+          transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1], delay: 0.16 }}
         >
-          <div className="flex items-center gap-2 mb-2">
-            <Sparkles className="w-3.5 h-3.5 text-gray-400" />
-            <span className="text-[10px] font-semibold uppercase tracking-widest text-gray-400">Vrácený čas za rok</span>
+          <div className="flex items-center gap-2 mb-3">
+            <Sparkles className="w-4 h-4 text-gray-400" />
+            <span className="text-xs font-semibold uppercase tracking-widest text-gray-400">Vrácený čas za rok</span>
             <Info className="w-3 h-3 text-gray-300 dark:text-gray-600" />
           </div>
-          <div className="text-3xl md:text-4xl font-medium text-gray-900 dark:text-gray-100 tracking-tight mt-1">
-            {formatNumber(savedHoursPerYear / 8, 0)} <span className="text-xl text-gray-400 font-light">prac. dní</span>
+          <div className="text-6xl md:text-8xl font-extralight text-gray-900 dark:text-gray-100 tracking-tight">
+            {formatNumber(savedHoursPerYear / 8, 0)} <span className="text-3xl md:text-4xl text-gray-400 font-light">prac. dní</span>
           </div>
-          <div className="text-xs text-gray-400 mt-1 font-light">kolega navíc zdarma</div>
+          <div className="text-base text-gray-400 mt-3 font-light">kolega navíc zdarma</div>
         </motion.button>
 
         <motion.button
           onClick={() => setActiveModal('cost-yearly')}
-          className="text-left cursor-pointer transition-all hover:opacity-70 active:opacity-50 outline-none flex flex-col group"
+          className="w-full cursor-pointer transition-all hover:opacity-80 active:opacity-60 outline-none flex flex-col group md:block md:text-right"
           {...itemAnim}
-          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1], delay: 0.15 }}
+          transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1], delay: 0.24 }}
         >
-          <div className="flex items-center gap-2 mb-2">
-            <Zap className="w-3.5 h-3.5 text-gray-900 dark:text-brand" />
-            <span className="text-[10px] font-semibold uppercase tracking-widest text-gray-900 dark:text-brand">Roční návratnost</span>
+          <div className="flex items-center gap-2 mb-3 md:justify-end">
+            <Zap className="w-4 h-4 text-gray-900 dark:text-brand" />
+            <span className="text-xs font-semibold uppercase tracking-widest text-gray-900 dark:text-brand">Roční návratnost</span>
             <Info className="w-3 h-3 text-gray-300 dark:text-gray-600" />
           </div>
-          <div className="text-3xl md:text-4xl font-medium text-gray-900 dark:text-brand tracking-tight mt-1">
+          <div className="text-6xl md:text-8xl font-extralight text-gray-900 dark:text-brand tracking-tight">
             {formatCZK(savedCzkPerYear)}
           </div>
-          <div className="text-xs text-gray-400 mt-1 font-light">z první investice do AI</div>
+          <div className="text-base text-gray-400 mt-3 font-light">z první investice do AI</div>
         </motion.button>
       </div>
 
