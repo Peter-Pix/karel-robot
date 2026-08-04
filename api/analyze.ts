@@ -176,7 +176,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           return res.status(503).json({ error: "Služba je dočasně nedostupná. Zkuste to prosím později." });
         }
         const data = await fallbackResponse.json();
-        const result = JSON.parse(data.response);
+        let responseContent = data.response;
+        
+        // Clean markdown fences if present in fallback response
+        responseContent = responseContent.replace(/^```json\s*|\s*```$/g, '').trim();
+        
+        const result = JSON.parse(responseContent);
         const latency = Date.now() - startTime;
         log("info", "Analysis complete (fallback)", { requestId, model, latencyMs: latency, action: result.action, confidence: result.confidence });
         return res.json(result);
@@ -187,11 +192,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const data = await response.json();
-    const resultText = data.choices?.[0]?.message?.content;
+    let resultText = data.choices?.[0]?.message?.content;
     if (!resultText) {
       log("error", "Empty response from Ollama", { requestId });
       return res.status(503).json({ error: "Služba vrátila prázdnou odpověď. Zkuste to prosím znovu." });
     }
+
+    // Clean markdown fences if present
+    resultText = resultText.replace(/^```json\s*|\s*```$/g, '').trim();
 
     // Parse first pass
     const firstPass = JSON.parse(resultText);
