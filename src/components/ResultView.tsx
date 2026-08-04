@@ -52,7 +52,7 @@ export function ResultView({ result, onRestart }: ResultViewProps) {
           </div>
           <div className="flex items-center gap-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider bg-gray-50 dark:bg-gray-800/50 px-3.5 py-1.5 rounded-full border border-gray-100 dark:border-gray-700">
             <svg className="w-3.5 h-3.5 text-gray-900 dark:text-brand animate-pulse" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
-            Jistota modelu: {result.confidence} %
+            Jistota modelu: {Math.round(result.confidence * 100)} %
           </div>
         </div>
       </motion.div>

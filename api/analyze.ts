@@ -200,6 +200,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         
         const result = JSON.parse(responseContent);
         const latency = Date.now() - startTime;
+        // Override the model's self-reported aiSeconds with the real measured
+        // latency — the model routinely under-reports (claims 2s when it took 15s).
+        result.aiSeconds = Math.max(1, Math.round(latency / 1000));
         log("info", "Analysis complete (fallback)", { requestId, model, latencyMs: latency, action: result.action, confidence: result.confidence });
         return res.json(result);
       }
@@ -291,6 +294,10 @@ Pokud něco nesedí, oprav to. Odpověz POUZE validním JSONem.`;
 
     const latency = Date.now() - startTime;
     log("info", "Analysis complete", { requestId, model, latencyMs: latency, action: finalResult.action, confidence: finalResult.confidence });
+
+    // Override the model's self-reported aiSeconds with the real measured
+    // latency — the model routinely under-reports (claims 2s when it took 15s).
+    finalResult.aiSeconds = Math.max(1, Math.round(latency / 1000));
 
     res.json(finalResult);
   } catch (error) {
