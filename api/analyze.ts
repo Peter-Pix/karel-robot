@@ -2,7 +2,12 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 
 const OLLAMA_API_URL = "https://ollama.com/api/v1/chat/completions";
 const OLLAMA_FALLBACK_URL = "https://ollama.com/api/generate";
-const OLLAMA_TIMEOUT_MS = 25000;
+// Main call: up to 55s (under Vercel's 60s maxDuration) — some cloud tags
+// (e.g. deepseek-v4-flash:0731) are slow but valid.
+const OLLAMA_TIMEOUT_MS = 55000;
+// Secondary double-check call: shorter budget so a slow main call + slow
+// review can't push the whole function past the 60s Vercel limit.
+const OLLAMA_REVIEW_TIMEOUT_MS = 20000;
 const DOUBLE_CHECK_THRESHOLD = 0.80;
 
 const SYSTEM_PROMPT = `Jsi Karel Robot, AI e-mailový administrátor.
@@ -234,7 +239,7 @@ Pokud něco nesedí, oprav to. Odpověz POUZE validním JSONem.`;
               stream: false,
             }),
           },
-          OLLAMA_TIMEOUT_MS
+          OLLAMA_REVIEW_TIMEOUT_MS
         );
 
         if (reviewResponse.ok) {
