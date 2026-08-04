@@ -120,7 +120,11 @@ export function ResultView({ result, onRestart }: ResultViewProps) {
       </motion.div>
 
       <motion.div variants={itemVariants}>
-        <CompanySavingsDashboard />
+        <CompanySavingsDashboard 
+          humanMinutes={result.humanMinutes}
+          aiSeconds={result.aiSeconds}
+          hourlyCost={result.hourlyCost}
+        />
       </motion.div>
 
       <motion.div variants={itemVariants} className="mt-20 flex justify-center">
