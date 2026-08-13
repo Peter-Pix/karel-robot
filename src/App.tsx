@@ -85,20 +85,20 @@ export default function App() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-white font-sans text-gray-900 selection:bg-gray-200 dark:bg-[#0a0a0a] dark:text-gray-100 dark:selection:bg-brand">
+    <div className="min-h-screen bg-zinc-50 font-sans text-gray-900 selection:bg-brand/30 dark:bg-zinc-950 dark:text-zinc-100 dark:selection:bg-brand/40 transition-colors duration-300">
       <AnimatePresence>
         {showTour && <TourGuide onClose={() => setShowTour(false)} />}
       </AnimatePresence>
 
-      <div className="sticky top-0 z-50 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md border-b border-gray-200 dark:border-white/[0.06]">
-        <div className="mx-auto flex items-center justify-center gap-2 px-4 py-1.5 text-xs">
+      <div className="sticky top-0 z-50 bg-white/60 dark:bg-zinc-900/60 backdrop-blur-xl border-b border-gray-200 dark:border-white/[0.06]">
+        <div className="mx-auto flex items-center justify-center gap-2 px-4 py-1.5 text-[10px] uppercase tracking-wider font-medium">
           <span className="text-gray-400 dark:text-zinc-500">🔬</span>
-          <span className="text-gray-500 dark:text-zinc-500">Součást AI ekosystému</span>
+          <span className="text-gray-500 dark:text-zinc-500">Sovereign AI Ecosystem</span>
           <a
             href="https://petrpiskacek.cloud"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-gray-700 dark:text-zinc-300 hover:text-gray-900 dark:hover:text-white transition-colors"
+            className="text-gray-700 dark:text-zinc-300 hover:text-brand dark:hover:text-brand transition-colors"
           >
             AI Lab
           </a>
@@ -107,7 +107,7 @@ export default function App() {
             href="https://4rap.cz"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-gray-700 dark:text-zinc-300 hover:text-gray-900 dark:hover:text-white transition-colors"
+            className="text-gray-700 dark:text-zinc-300 hover:text-brand dark:hover:text-brand transition-colors"
           >
             4rap.cz
           </a>

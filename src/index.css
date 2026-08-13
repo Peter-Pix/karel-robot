@@ -7,6 +7,8 @@
   --font-sans: "SF Pro Display", "Inter", system-ui, sans-serif;
   --color-brand: #d9a043;
   --color-brand-hover: #c58e33;
+  --color-zinc-950: #09090b;
+  --color-zinc-900: #18181b;
 }
 
 @layer base {
@@ -16,10 +18,20 @@
     -moz-osx-font-smoothing: grayscale;
   }
   
-  /* Prevent iOS zoom on inputs */
   input[type="text"], 
   input[type="email"], 
   textarea {
     font-size: 16px !important;
+  }
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-white/70 dark:bg-zinc-900/70 backdrop-blur-md border border-gray-200 dark:border-white/10 shadow-sm;
+  }
+  
+  .sovereign-button {
+    @apply px-4 py-2 rounded-full font-medium transition-all active:scale-95 
+           bg-brand text-white hover:bg-brand-hover dark:bg-brand dark:text-zinc-950 dark:hover:bg-brand-hover;
   }
 }
