@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { motion } from 'motion/react';
 import { AnalysisResult } from '../types';
 import { SavingsMetrics } from './SavingsMetrics';
-import { CompanySavingsDashboard } from './CompanySavingsDashboard';
+
+// Lazy-load the recharts dashboard — only fetched when results are shown
+const CompanySavingsDashboard = lazy(() => import('./CompanySavingsDashboard'));
 
 interface ResultViewProps {
   result: AnalysisResult;
@@ -120,11 +122,13 @@ export function ResultView({ result, onRestart }: ResultViewProps) {
       </motion.div>
 
       <motion.div variants={itemVariants}>
-        <CompanySavingsDashboard 
-          humanMinutes={result.humanMinutes}
-          aiSeconds={result.aiSeconds}
-          hourlyCost={result.hourlyCost}
-        />
+        <Suspense fallback={<div className="h-64 animate-pulse bg-gray-100 dark:bg-gray-800/50 rounded-2xl" />}>
+          <CompanySavingsDashboard 
+            humanMinutes={result.humanMinutes}
+            aiSeconds={result.aiSeconds}
+            hourlyCost={result.hourlyCost}
+          />
+        </Suspense>
       </motion.div>
 
       <motion.div variants={itemVariants} className="mt-20 flex justify-center">
