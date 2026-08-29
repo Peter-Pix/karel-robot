@@ -2,6 +2,8 @@
 
 Interaktivní webová aplikace, která simuluje AI zaměstnance zpracovávajícího příchozí zákaznické e-maily v českém prostředí. Demo běží na dvou režimech: (a) lokální simulovaný analyzátor (`local-demo`) bez externích závislostí, (b) reálný LLM routing přes Ollama Cloud (modely `deepseek-v4-flash`, `minimax-m3`, `kimi-k2.7-code` apod.) schovaný za Vercel serverless funkcí.
 
+> **Aktuální stav (ověřeno 2026-08-29):** build prochází (`npm run build`), ale **`npm run lint` (tsc --noEmit) FAILUJE** — typová chyba v `src/components/ResultView.tsx:7` (`React.lazy` očekává `default` export, `CompanySavingsDashboard` je named export). Žádné testy. Podrobný faktický stav: [`planner/state.md`](planner/state.md).
+
 ## Demo
 - URL: <https://karel.petrpiskacek.cloud>
 - AI Studio kopie: <https://ai.studio/apps/61077f2a-a585-4d94-bb13-a66711e1f4be>
@@ -79,4 +81,4 @@ API endpointy (`/api/*`) se v dev režimu simulují přes Vite rewrite; pro pln�
 - Napojení na reálnou e-mailovou schránku (IMAP/O365) místo ručního vkládání.
 - Per-klient tenancí klíč + audit log (viz `docs/saas-roadmap.md`).
 - Export výsledků do CSV/Jira.
-- Testy: chybí unit/integration sada — `npm run lint` kontroluje jen typy.
+- Testy: chybí unit/integration sada. Navíc `npm run lint` (tsc --noEmit) aktuálně FAILUJE (typová chyba v `ResultView.tsx:7`) — typová kontrola je tak momentálně nepoužitelná, viz [`planner/state.md`](planner/state.md).
