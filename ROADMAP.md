@@ -14,7 +14,7 @@
 
 ## Fáze B: Funkce — zpevnit routing + dashboard
 
-- [ ] Ověřit double-check logiku — `api/analyze.ts`: potvrdit, že `confidence < 0.80` spouští druhé volání (5 min)
+- [x] Ověřit double-check logiku — `api/analyze.ts`: potvrdit, že `confidence < 0.80` spouští druhé volání (5 min)
 - [ ] Fallback UX — když Ollama Cloud selže, zobrazit jasnou chybu v UI, ne špatnou klasifikaci (5 min)
 - [ ] Logovat klasifikace — přidat log do `api/analyze.ts` (requestId, model, akce, confidence) (5 min)
 - [ ] CSV export — přidat tlačítko pro export klasifikací do CSV v `ResultView` (5 min)
