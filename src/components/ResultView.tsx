@@ -4,7 +4,7 @@ import { AnalysisResult } from '../types';
 import { SavingsMetrics } from './SavingsMetrics';
 
 // Lazy-load the recharts dashboard — only fetched when results are shown
-const CompanySavingsDashboard = lazy(() => import('./CompanySavingsDashboard'));
+const CompanySavingsDashboard = lazy(() => import('./CompanySavingsDashboard').then(m => ({ default: m.CompanySavingsDashboard })));
 
 interface ResultViewProps {
   result: AnalysisResult;
