@@ -9,8 +9,8 @@
 - [x] Ověřit lint — `npm run lint` (tsc --noEmit) musí projít bez chyb (5 min)
 - [x] Přidat test runner — `vitest` do devDependencies + `"test": "vitest run"` do package.json (5 min)
 - [x] Přidat smoke test pro `LocalDemoEmailAnalyzer` — ověřit klasifikaci (výpověď→ESCALATE, výpadek→ACKNOWLEDGE, neznámý→DRAFT) (5 min)
-- [ ] Přidat test pro `savingsCalculator` — ověřit `calculateSavings` + `savedMinutesWithReview` (5 min)
-- [ ] Ověřit build + testy — `npm run build` + `npm test` (5 min)
+- [x] Přidat test pro `savingsCalculator` — ověřit `calculateSavings` + `savedMinutesWithReview` (5 min)
+- [x] Ověřit build + testy — `npm run build` + `npm test` (5 min)
 
 ## Fáze B: Funkce — zpevnit routing + dashboard
 
@@ -18,7 +18,7 @@
 - [ ] Fallback UX — když Ollama Cloud selže, zobrazit jasnou chybu v UI, ne špatnou klasifikaci (5 min)
 - [ ] Logovat klasifikace — přidat log do `api/analyze.ts` (requestId, model, akce, confidence) (5 min)
 - [ ] CSV export — přidat tlačítko pro export klasifikací do CSV v `ResultView` (5 min)
-- [ ] Ověřit build + testy — `npm run build` + `npm test` (5 min)
+- [x] Ověřit build + testy — `npm run build` + `npm test` (5 min)
 
 ## Fáze C: Marketing — vnímání projektu
 
