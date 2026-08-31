@@ -1,7 +1,8 @@
 # Stav projektu: Karel Robot
 
 > Audit: 2026-08-29 · The Archivist (Sovereign OS) · 100% faktický, z kódu, git historie a běhu příkazů.
-> Branch: `feat/karel-saas` · working tree **ahead 2** (2 unpushed commity: `e7609ef` docs ROADMAP, `18cd3bf` docs readme).
+> Branch: `feat/karel-saas` · working tree **ahead 3** (3 unpushed commity: `4abc187` docs planner audit, `e7609ef` docs ROADMAP, `18cd3bf` docs readme).
+> Re-audit: 2026-08-31 · ověřeno — lint stále FAILUJE (ResultView.tsx:7), build PASS, žádné testy. Stav beze změny.
 > Nejedná se o Next.js — je to **Vite + React 19 SPA** s Vercel serverless funkcemi v `api/`.
 
 ## Co je hotové ✅
