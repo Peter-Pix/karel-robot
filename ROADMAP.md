@@ -5,8 +5,8 @@
 
 ## Fáze A: Základ — opravit lint + přidat testy
 
-- [ ] Opravit lint — `src/components/ResultView.tsx:7`: změnit lazy import na `({ default }) => import(...)` NEBO přidat `export default` do `CompanySavingsDashboard` (5 min)
-- [ ] Ověřit lint — `npm run lint` (tsc --noEmit) musí projít bez chyb (5 min)
+- [x] Opravit lint — `src/components/ResultView.tsx:7`: změnit lazy import na `({ default }) => import(...)` NEBO přidat `export default` do `CompanySavingsDashboard` (5 min)
+- [x] Ověřit lint — `npm run lint` (tsc --noEmit) musí projít bez chyb (5 min)
 - [ ] Přidat test runner — `vitest` do devDependencies + `"test": "vitest run"` do package.json (5 min)
 - [ ] Přidat smoke test pro `LocalDemoEmailAnalyzer` — ověřit klasifikaci (výpověď→ESCALATE, výpadek→ACKNOWLEDGE, neznámý→DRAFT) (5 min)
 - [ ] Přidat test pro `savingsCalculator` — ověřit `calculateSavings` + `savedMinutesWithReview` (5 min)
