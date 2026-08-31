@@ -98,6 +98,15 @@ function log(level: string, msg: string, meta: Record<string, unknown> = {}) {
   }
 }
 
+function logClassification(requestId: string, model: string, action: string, confidence: number) {
+  log("info", "classification", {
+    requestId,
+    model,
+    akce: action,
+    confidence,
+  });
+}
+
 function setCorsHeaders(res: VercelResponse) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
@@ -293,6 +302,7 @@ Pokud něco nesedí, oprav to. Odpověz POUZE validním JSONem.`;
     }
 
     const latency = Date.now() - startTime;
+    logClassification(requestId, model, finalResult.action, finalResult.confidence);
     log("info", "Analysis complete", { requestId, model, latencyMs: latency, action: finalResult.action, confidence: finalResult.confidence });
 
     // Override the model's self-reported aiSeconds with the real measured

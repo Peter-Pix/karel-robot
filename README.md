@@ -2,7 +2,7 @@
 
 Interaktivní webová aplikace, která simuluje AI zaměstnance zpracovávajícího příchozí zákaznické e-maily v českém prostředí. Demo běží na dvou režimech: (a) lokální simulovaný analyzátor (`local-demo`) bez externích závislostí, (b) reálný LLM routing přes Ollama Cloud (modely `deepseek-v4-flash`, `minimax-m3`, `kimi-k2.7-code` apod.) schovaný za Vercel serverless funkcí.
 
-> **Aktuální stav (ověřeno 2026-08-29):** build prochází (`npm run build`), ale **`npm run lint` (tsc --noEmit) FAILUJE** — typová chyba v `src/components/ResultView.tsx:7` (`React.lazy` očekává `default` export, `CompanySavingsDashboard` je named export). Žádné testy. Podrobný faktický stav: [`planner/state.md`](planner/state.md).
+> **Aktuální stav (ověřeno 2026-08-31):** build prochází (`npm run build`), **`npm run lint` (tsc --noEmit) prochází** a **testy procházejí** (`npm test` — 21 testů, 4 soubory). Podrobný faktický stav: [`planner/state.md`](planner/state.md).
 
 ## Demo
 - URL: <https://karel.petrpiskacek.cloud>
@@ -56,6 +56,26 @@ npm run lint       # tsc --noEmit
 
 API endpointy (`/api/*`) se v dev režimu simulují přes Vite rewrite; pro plný backend spusťte `vercel dev` nebo nasazením na Vercel (viz `vercel.json`).
 
+## Testy
+
+Testy běží na **Vitest** (`vitest run`). Spuštění:
+
+```bash
+npm test          # jednorázově spustí celou sadu (alias pro `vitest run`)
+npx vitest        # watch režim (spouští se při každé změně souboru)
+```
+
+### Co testy pokrývají (21 testů / 4 soubory)
+
+| Soubor | Pokrývá |
+|--------|---------|
+| `src/lib/__tests__/emailAnalysis.test.ts` | Klasifikace `LocalDemoEmailAnalyzer` (výpověď→`ESCALATE`, výpadek+kompenzace→`ACKNOWLEDGE`, neznámý odesílatel→`DRAFT`, admin požadavek→`DRAFT`) + fallback UX `ApiEmailAnalyzer` (serverová chyba → `AnalysisError` s `retryable`/`status`, 4xx = ne-retryable, generická zpráva při chybě bez JSON) |
+| `src/lib/__tests__/savingsCalculator.test.ts` | `calculateSavings` (úspora minut/korun, žádná záporná úspora), `savedMinutesWithReview` (automatizace vs. lidská revize), `calculateExtendedSavings` (denní/týdenní/měsíční/roční), `formatCZK`/`formatMultiplier` |
+| `src/lib/__tests__/csvExport.test.ts` | `classificationToCsv` — hlavička + řádek, escapování čárek/uvozovek, spojení důvodů do jednoho sloupce |
+| `api/__tests__/analyze.test.ts` | Double-check logika v `api/analyze.ts` (druhé volání při `confidence < 0.80`, přeskočení při `>= 0.80`, fallback na první pass při selhání review) + klasifikační log (`requestId`, model, akce, confidence) |
+
+Testy jsou **unit/integration** — nevyžadují žádný API klíč ani síť (Ollama volání je mockované přes `vi.stubGlobal('fetch', ...)`). Lze je spustit offline.
+
 ## Tok dat
 
 1. Uživatel vloží e-mail nebo použije šablonu (Rychle napiš / Vlastní).
@@ -81,4 +101,4 @@ API endpointy (`/api/*`) se v dev režimu simulují přes Vite rewrite; pro pln�
 - Napojení na reálnou e-mailovou schránku (IMAP/O365) místo ručního vkládání.
 - Per-klient tenancí klíč + audit log (viz `docs/saas-roadmap.md`).
 - Export výsledků do CSV/Jira.
-- Testy: chybí unit/integration sada. Navíc `npm run lint` (tsc --noEmit) aktuálně FAILUJE (typová chyba v `ResultView.tsx:7`) — typová kontrola je tak momentálně nepoužitelná, viz [`planner/state.md`](planner/state.md).
+- Rozšířit testy: integrace s reálným Ollama voláním (smoke test), testy `templateGenerator.ts` a UI komponent.

@@ -1,4 +1,4 @@
-export type ViewState = "form" | "processing" | "result";
+export type ViewState = "form" | "processing" | "result" | "error";
 
 export type EmailInput = {
   sender: string;

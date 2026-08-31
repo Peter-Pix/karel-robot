@@ -147,3 +147,49 @@ describe('api/analyze.ts — double-check logika', () => {
     expect(res._json.confidence).toBe(0.60);
   });
 });
+
+describe('api/analyze.ts — klasifikační log', () => {
+  beforeEach(() => {
+    vi.unstubAllGlobals();
+    delete process.env.OLLAMA_API_KEY;
+  });
+
+  it('zaloguje klasifikaci s requestId, model, akce a confidence', async () => {
+    const firstPass = {
+      action: 'ESCALATE',
+      actionLabel: 'Předat právnímu týmu',
+      category: 'výpověď',
+      customerStatus: 'zákazník',
+      recipient: 'právní tým',
+      outputTitle: 'Výpověď smlouvy',
+      output: 'Dobrý den, Vaši výpověď jsem zaevidoval.',
+      reasons: ['výpověď smlouvy', 'právní jazyk'],
+      humanMinutes: 10,
+      aiSeconds: 2,
+      hourlyCost: 500,
+      confidence: 0.95, // >= 0.80 → žádný double-check, jeden log
+    };
+
+    const consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    mockFetchSequence([okJsonResponse(firstPass)]);
+
+    const res = makeRes();
+    await handler(makeReq({ model: 'deepseek-v4-flash', input: baseInput }), res);
+
+    // Najdi klasifikační log entry
+    const classificationLogs = consoleLogSpy.mock.calls
+      .map((c) => c[0])
+      .filter((line) => typeof line === 'string' && line.includes('"classification"'))
+      .map((line) => JSON.parse(line));
+
+    expect(classificationLogs).toHaveLength(1);
+    const entry = classificationLogs[0];
+    expect(entry.msg).toBe('classification');
+    expect(entry.requestId).toMatch(/^req_/);
+    expect(entry.model).toBe('deepseek-v4-flash');
+    expect(entry.akce).toBe('ESCALATE');
+    expect(entry.confidence).toBe(0.95);
+
+    consoleLogSpy.mockRestore();
+  });
+});

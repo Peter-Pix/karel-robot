@@ -15,24 +15,24 @@
 ## Fáze B: Funkce — zpevnit routing + dashboard
 
 - [x] Ověřit double-check logiku — `api/analyze.ts`: potvrdit, že `confidence < 0.80` spouští druhé volání (5 min)
-- [ ] Fallback UX — když Ollama Cloud selže, zobrazit jasnou chybu v UI, ne špatnou klasifikaci (5 min)
-- [ ] Logovat klasifikace — přidat log do `api/analyze.ts` (requestId, model, akce, confidence) (5 min)
-- [ ] CSV export — přidat tlačítko pro export klasifikací do CSV v `ResultView` (5 min)
+- [x] Fallback UX — když Ollama Cloud selže, zobrazit jasnou chybu v UI, ne špatnou klasifikaci (5 min)
+- [x] Logovat klasifikace — přidat log do `api/analyze.ts` (requestId, model, akce, confidence) (5 min)
+- [x] CSV export — přidat tlačítko pro export klasifikací do CSV v `ResultView` (5 min)
 - [x] Ověřit build + testy — `npm run build` + `npm test` (5 min)
 
 ## Fáze C: Marketing — vnímání projektu
 
-- [ ] Ověřit OG image — `public/og-image.png` (1200×630) se správně načítá (5 min)
-- [ ] Ověřit SEO — `robots.txt` + meta tagy v `index.html` (5 min)
-- [ ] Doplnit landing copy — jasná hodnota na homepage (co AI ušetří, pro koho) (5 min)
-- [ ] Ověřit build — `npm run build` (5 min)
+- [x] Ověřit OG image — `public/og-image.png` (1200×630) se správně načítá (5 min)
+- [x] Ověřit SEO — `robots.txt` + meta tagy v `index.html` (5 min)
+- [x] Doplnit landing copy — jasná hodnota na homepage (co AI ušetří, pro koho) (5 min)
+- [x] Ověřit build — `npm run build` (5 min)
 
 ## Fáze D: Dokumentace + úklid
 
-- [ ] Doplnit README — sekce "Testy" (jak spustit, co pokrývají) (5 min)
-- [ ] Vyčistit `.env.example` — odstranit zavádějící `GEMINI_API_KEY`/`APP_URL` komentáře, nechat jen `OLLAMA_API_KEY` (5 min)
-- [ ] Vyčistit `metadata.json` — odstranit `MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API` (AI Studio pozůstatek) (5 min)
-- [ ] Ověřit finální build + testy — `npm run build` + `npm test` (5 min)
+- [x] Doplnit README — sekce "Testy" (jak spustit, co pokrývají) (5 min)
+- [x] Vyčistit `.env.example` — odstranit zavádějící `GEMINI_API_KEY`/`APP_URL` komentáře, nechat jen `OLLAMA_API_KEY` (5 min)
+- [x] Vyčistit `metadata.json` — odstranit `MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API` (AI Studio pozůstatek) (5 min)
+- [x] Ověřit finální build + testy — `npm run build` + `npm test` (5 min)
 
 ## Blokery
 - Fáze A item 1 (lint fix) je triviální, ale blokuje typovou kontrolu — bez něj nelze bezpečně refaktorovat.

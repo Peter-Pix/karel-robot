@@ -2,6 +2,7 @@ import React, { Suspense, lazy } from 'react';
 import { motion } from 'motion/react';
 import { AnalysisResult } from '../types';
 import { SavingsMetrics } from './SavingsMetrics';
+import { classificationToCsv, downloadCsv } from '../lib/csvExport';
 
 // Lazy-load the recharts dashboard — only fetched when results are shown
 const CompanySavingsDashboard = lazy(() => import('./CompanySavingsDashboard').then(m => ({ default: m.CompanySavingsDashboard })));
@@ -31,6 +32,13 @@ export function ResultView({ result, onRestart }: ResultViewProps) {
       y: 0,
       transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] }
     }
+  };
+
+
+  const handleExportCsv = () => {
+    const csv = classificationToCsv(result);
+    const date = new Date().toISOString().slice(0, 10);
+    downloadCsv(`karel-klasifikace-${date}.csv`, csv);
   };
 
   return (
@@ -131,12 +139,18 @@ export function ResultView({ result, onRestart }: ResultViewProps) {
         </Suspense>
       </motion.div>
 
-      <motion.div variants={itemVariants} className="mt-20 flex justify-center">
+      <motion.div variants={itemVariants} className="mt-20 flex flex-col sm:flex-row items-center justify-center gap-4">
         <button 
           onClick={onRestart}
           className="px-10 py-4 bg-gray-900 dark:bg-brand hover:bg-black dark:hover:bg-brand-hover text-white dark:text-black font-semibold rounded-xl hover:scale-[1.01] active:scale-[0.99] transition-all shadow-sm shadow-black/10 focus:ring-4 focus:ring-black/20 dark:focus:ring-brand/20 outline-none cursor-pointer text-sm uppercase tracking-wider"
         >
           Vyzkoušet další e-mail
+        </button>
+        <button 
+          onClick={handleExportCsv}
+          className="px-10 py-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 font-semibold rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 hover:scale-[1.01] active:scale-[0.99] transition-all shadow-sm shadow-black/5 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-600 outline-none cursor-pointer text-sm uppercase tracking-wider"
+        >
+          Exportovat do CSV
         </button>
       </motion.div>
     </motion.div>

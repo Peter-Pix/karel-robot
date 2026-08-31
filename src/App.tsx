@@ -4,18 +4,23 @@ import { AppHeader } from './components/AppHeader';
 import { EmailFormView } from './components/EmailFormView';
 import { ProcessingView } from './components/ProcessingView';
 import { ResultView } from './components/ResultView';
+import { ErrorView } from './components/ErrorView';
 import { SettingsModal } from './components/SettingsModal';
 import { TourGuide } from './components/TourGuide';
 import { ViewState, EmailInput, AnalysisResult } from './types';
-import { LocalDemoEmailAnalyzer, ApiEmailAnalyzer, EmailAnalyzer } from './lib/emailAnalysis';
+import { LocalDemoEmailAnalyzer, ApiEmailAnalyzer, EmailAnalyzer, AnalysisError } from './lib/emailAnalysis';
 
 import { AiEmployeeFeature } from './components/AiEmployeeFeature';
+import { ValueProposition } from './components/ValueProposition';
 import { AppFooter } from './components/AppFooter';
 
 export default function App() {
   const [viewState, setViewState] = useState<ViewState>('form');
   const [emailData, setEmailData] = useState<EmailInput | undefined>(undefined);
   const [result, setResult] = useState<AnalysisResult | null>(null);
+  // Structured error state — when the LLM backend fails we show a clear
+  // in-UI error instead of a bad classification or a crude browser alert.
+  const [error, setError] = useState<{ message: string; retryable: boolean } | null>(null);
   
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [selectedModel, setSelectedModel] = useState('deepseek-v4-flash');
@@ -42,6 +47,7 @@ export default function App() {
     activeProcessRef.current = true;
     submitStartRef.current = Date.now();
     setEmailData(data);
+    setError(null);
     setViewState('processing');
     
     try {
@@ -56,11 +62,20 @@ export default function App() {
       const elapsedSeconds = Math.max(1, Math.round((Date.now() - submitStartRef.current) / 1000));
       analysisResult.aiSeconds = elapsedSeconds;
       setResult(analysisResult);
-    } catch (error) {
-      console.error("Analysis failed:", error);
-      handleRestart();
-      // Optionally show an error toast here
-      alert("Chyba při analýze e-mailu. Zkontrolujte nastavení modelu nebo API klíče.");
+    } catch (err) {
+      console.error("Analysis failed:", err);
+      // Show a clear, structured error in the UI — never a bad classification.
+      if (err instanceof AnalysisError) {
+        setError({ message: err.message, retryable: err.retryable });
+      } else {
+        setError({
+          message: 'Analýza se nezdařila. Zkontrolujte nastavení modelu nebo API klíče.',
+          retryable: false,
+        });
+      }
+      setResult(null);
+      setViewState('error');
+      activeProcessRef.current = false;
     }
   };
 
@@ -71,11 +86,21 @@ export default function App() {
     }
   };
 
+  const handleRetry = () => {
+    // Re-run the analysis with the same input and model.
+    if (emailData) {
+      handleSubmit(emailData);
+    } else {
+      handleRestart();
+    }
+  };
+
   const handleRestart = () => {
     activeProcessRef.current = false;
     setViewState('form');
     // We intentionally keep emailData to allow the user to modify their previous input
     setResult(null);
+    setError(null);
   };
 
   useEffect(() => {
@@ -125,17 +150,28 @@ export default function App() {
       <main className="w-full pt-4 sm:pt-8 md:pt-12">
         <AnimatePresence mode="wait">
           {viewState === 'form' && (
+            <div id="demo">
             <EmailFormView 
               key="form" 
               initialData={emailData} 
               onSubmit={handleSubmit} 
             />
+            </div>
           )}
           {viewState === 'processing' && (
             <ProcessingView 
               key="processing" 
               onComplete={handleProcessingComplete}
               isComplete={!!result}
+            />
+          )}
+          {viewState === 'error' && error && (
+            <ErrorView 
+              key="error" 
+              message={error.message} 
+              retryable={error.retryable}
+              onRetry={handleRetry} 
+              onEdit={handleRestart} 
             />
           )}
           {viewState === 'result' && result && (
@@ -148,7 +184,12 @@ export default function App() {
         </AnimatePresence>
       </main>
 
-      {viewState === 'form' && <AiEmployeeFeature />}
+      {viewState === 'form' && (
+        <>
+          <ValueProposition />
+          <AiEmployeeFeature />
+        </>
+      )}
 
       <SettingsModal 
         isOpen={isSettingsOpen} 

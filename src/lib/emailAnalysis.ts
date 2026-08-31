@@ -4,6 +4,25 @@ export interface EmailAnalyzer {
   analyze(input: EmailInput): Promise<AnalysisResult>;
 }
 
+/**
+ * Structured error thrown when the LLM backend (Ollama Cloud) fails.
+ * Carries a human-readable Czech message from the server (or a sensible
+ * fallback) so the UI can show a clear error instead of a bad classification.
+ */
+export class AnalysisError extends Error {
+  /** True when a retry might succeed (transient outage / timeout). */
+  readonly retryable: boolean;
+  /** HTTP status from the backend, when available. */
+  readonly status?: number;
+
+  constructor(message: string, options: { retryable?: boolean; status?: number } = {}) {
+    super(message);
+    this.name = "AnalysisError";
+    this.retryable = options.retryable ?? true;
+    this.status = options.status;
+  }
+}
+
 export class ApiEmailAnalyzer implements EmailAnalyzer {
   constructor(private modelName: string = "deepseek-v4-flash") {}
 
@@ -18,7 +37,28 @@ export class ApiEmailAnalyzer implements EmailAnalyzer {
     });
 
     if (!response.ok) {
-      throw new Error(`API error: ${response.status} ${response.statusText}`);
+      // Try to surface the server's own (Czech) error message so the user
+      // sees a clear, actionable reason — not a generic "API error".
+      let serverMessage: string | undefined;
+      try {
+        const body = await response.json();
+        if (body && typeof body.error === 'string') {
+          serverMessage = body.error;
+        }
+      } catch {
+        // Non-JSON error body — fall through to generic message.
+      }
+
+      const message =
+        serverMessage ||
+        (response.status === 503
+          ? 'Služba je dočasně nedostupná. Zkuste to prosím později.'
+          : `Analýza se nezdařila (chyba ${response.status}). Zkuste to prosím znovu.`);
+
+      throw new AnalysisError(message, {
+        retryable: response.status === 503 || response.status >= 500,
+        status: response.status,
+      });
     }
 
     const data = await response.json();
