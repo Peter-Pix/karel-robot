@@ -61,7 +61,7 @@ describe('ApiEmailAnalyzer — fallback UX (chyba místo špatné klasifikace)',
     });
     vi.stubGlobal('fetch', fetchMock);
 
-    const api = new ApiEmailAnalyzer('deepseek-v4-flash');
+    const api = new ApiEmailAnalyzer('gemma4:31b');
     await expect(api.analyze(input({ subject: 'Výpověď', body: 'Výpověď smlouvy.' })))
       .rejects.toBeInstanceOf(AnalysisError);
 
@@ -83,7 +83,7 @@ describe('ApiEmailAnalyzer — fallback UX (chyba místo špatné klasifikace)',
     });
     vi.stubGlobal('fetch', fetchMock);
 
-    const api = new ApiEmailAnalyzer('deepseek-v4-flash');
+    const api = new ApiEmailAnalyzer('gemma4:31b');
     try {
       await api.analyze(input({ subject: 'Dotaz', body: 'Dobrý den.' }));
     } catch (err) {
@@ -102,7 +102,7 @@ describe('ApiEmailAnalyzer — fallback UX (chyba místo špatné klasifikace)',
     });
     vi.stubGlobal('fetch', fetchMock);
 
-    const api = new ApiEmailAnalyzer('deepseek-v4-flash');
+    const api = new ApiEmailAnalyzer('gemma4:31b');
     try {
       await api.analyze(input({ subject: 'Dotaz', body: 'Dobrý den.' }));
     } catch (err) {

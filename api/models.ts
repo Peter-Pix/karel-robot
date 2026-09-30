@@ -4,7 +4,6 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 // models (e.g. mistral-large-3:675b, qwen3.5:397b, gpt-oss:120b) that are
 // slow and overkill for e-mail triage. Keeps fast, good-value options.
 const ALLOWED_MODELS = [
-  "deepseek-v4-flash",
   "nemotron-3-nano:30b",
   "gemma4:31b",
   "minimax-m3",

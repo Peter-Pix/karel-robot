@@ -78,7 +78,7 @@ describe('api/analyze.ts — double-check logika', () => {
     const fetchMock = mockFetchSequence([okJsonResponse(firstPass), okJsonResponse(reviewed)]);
 
     const res = makeRes();
-    await handler(makeReq({ model: 'deepseek-v4-flash', input: baseInput }), res);
+    await handler(makeReq({ model: 'gemma4:31b', input: baseInput }), res);
 
     // Dvě volání: hlavní + double-check
     expect(fetchMock).toHaveBeenCalledTimes(2);
@@ -110,7 +110,7 @@ describe('api/analyze.ts — double-check logika', () => {
     const fetchMock = mockFetchSequence([okJsonResponse(firstPass)]);
 
     const res = makeRes();
-    await handler(makeReq({ model: 'deepseek-v4-flash', input: baseInput }), res);
+    await handler(makeReq({ model: 'gemma4:31b', input: baseInput }), res);
 
     // Jen jedno volání — žádný double-check
     expect(fetchMock).toHaveBeenCalledTimes(1);
@@ -140,7 +140,7 @@ describe('api/analyze.ts — double-check logika', () => {
     ]);
 
     const res = makeRes();
-    await handler(makeReq({ model: 'deepseek-v4-flash', input: baseInput }), res);
+    await handler(makeReq({ model: 'gemma4:31b', input: baseInput }), res);
 
     // Dvě volání proběhla, ale výsledek zůstává první pass
     expect(fetchMock).toHaveBeenCalledTimes(2);
@@ -174,7 +174,7 @@ describe('api/analyze.ts — klasifikační log', () => {
     mockFetchSequence([okJsonResponse(firstPass)]);
 
     const res = makeRes();
-    await handler(makeReq({ model: 'deepseek-v4-flash', input: baseInput }), res);
+    await handler(makeReq({ model: 'gemma4:31b', input: baseInput }), res);
 
     // Najdi klasifikační log entry
     const classificationLogs = consoleLogSpy.mock.calls
@@ -186,7 +186,7 @@ describe('api/analyze.ts — klasifikační log', () => {
     const entry = classificationLogs[0];
     expect(entry.msg).toBe('classification');
     expect(entry.requestId).toMatch(/^req_/);
-    expect(entry.model).toBe('deepseek-v4-flash');
+    expect(entry.model).toBe('gemma4:31b');
     expect(entry.akce).toBe('ESCALATE');
     expect(entry.confidence).toBe(0.95);
 

@@ -20,6 +20,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     timestamp: new Date().toISOString(),
     version: "1.0.0",
     ollama: apiKeySet ? "configured" : "missing_key",
-    model: "deepseek-v4-flash",
+    model: "gemma4:31b",
   });
 }
