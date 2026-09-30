@@ -1,7 +1,6 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 
 const OLLAMA_API_URL = "https://ollama.com/v1/chat/completions";
-const OLLAMA_FALLBACK_URL = "https://ollama.com/api/generate";
 // Main call: up to 55s (under Vercel's 60s maxDuration) — some cloud tags
 // Cloud tags can be slow; we keep a generous timeout.
 const OLLAMA_TIMEOUT_MS = 55000;
@@ -22,7 +21,7 @@ Tvým úkolem je analyzovat příchozí e-mail od zákazníka a rozhodnout o dal
 - U reklamací a problémů: vážný, empatický, profesionální
 - Nikdy nepoužívej "Děkujeme za Váš e-mail" — to je strojové
 - Místo toho: "Dobrý den, mám to tu." nebo "Díky za zprávu, podívám se na to."
-- Přizpůsob tón situaci, ne používej šablonu
+- Přizpůb tón situaci, ne používej šablonu
 
 ## PRAVIDLA PRO ROZHODOVÁNÍ
 - **Výpověď smlouvy, právní jazyk, hrozba soudem** → akce "ESCALATE"
@@ -150,12 +149,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: "Missing required fields: subject, body" });
     }
 
+    if (!apiKey) {
+      log("error", "OLLAMA_API_KEY not configured", { requestId });
+      return res.status(503).json({ error: "Chybí API klíč pro Ollama Cloud. Kontaktujte administrátora." });
+    }
+
     const ollamaHeaders: Record<string, string> = {
       "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
     };
-    if (apiKey) {
-      ollamaHeaders["Authorization"] = `Bearer ${apiKey}`;
-    }
 
     const userPrompt = `Email sender: ${input.sender || "unknown"}\nSubject: ${input.subject}\nBody: ${input.body}`;
 
@@ -180,41 +182,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     );
 
     if (!response.ok) {
-      if (response.status === 404) {
-        log("warn", "Model not found, trying fallback", { requestId, model });
-        const fallbackResponse = await fetchWithTimeout(
-          OLLAMA_FALLBACK_URL,
-          {
-            method: "POST",
-            headers: ollamaHeaders,
-            body: JSON.stringify({
-              model,
-              prompt: SYSTEM_PROMPT + "\n\n" + userPrompt,
-              stream: false,
-              format: "json",
-            }),
-          },
-          OLLAMA_TIMEOUT_MS
-        );
-        if (!fallbackResponse.ok) {
-          const errText = await fallbackResponse.text();
-          log("error", "Fallback API failed", { requestId, status: fallbackResponse.status, error: errText });
-          return res.status(503).json({ error: "Služba je dočasně nedostupná. Zkuste to prosím později." });
-        }
-        const data = await fallbackResponse.json();
-        let responseContent = data.response;
-        
-        // Clean markdown fences if present in fallback response
-        responseContent = responseContent.replace(/^```json\s*|\s*```$/g, '').trim();
-        
-        const result = JSON.parse(responseContent);
-        const latency = Date.now() - startTime;
-        // Override the model's self-reported aiSeconds with the real measured
-        // latency — the model routinely under-reports (claims 2s when it took 15s).
-        result.aiSeconds = Math.max(1, Math.round(latency / 1000));
-        log("info", "Analysis complete (fallback)", { requestId, model, latencyMs: latency, action: result.action, confidence: result.confidence });
-        return res.json(result);
-      }
       const errText = await response.text();
       log("error", "Ollama API error", { requestId, status: response.status, error: errText });
       return res.status(503).json({ error: "Služba je dočasně nedostupná. Zkuste to prosím později." });
@@ -228,14 +195,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     // Clean markdown fences if present
-    resultText = resultText.replace(/^```json\s*|\s*```$/g, '').trim();
+    resultText = resultText.replace(/^```json\s*|\s*```$/g, "").trim();
 
     // Parse first pass
-    const firstPass = JSON.parse(resultText);
+    let firstPass: Record<string, unknown>;
+    try {
+      firstPass = JSON.parse(resultText);
+    } catch (parseErr) {
+      log("error", "Failed to parse Ollama response as JSON", { requestId, raw: resultText.slice(0, 500) });
+      return res.status(503).json({ error: "Ollama vrátila neplatný formát odpovědi. Zkuste to prosím znovu." });
+    }
 
     // Double-check: only if confidence is below threshold
     let finalResult = firstPass;
-    if (firstPass.confidence < DOUBLE_CHECK_THRESHOLD) {
+    if (typeof firstPass.confidence === "number" && firstPass.confidence < DOUBLE_CHECK_THRESHOLD) {
       log("info", "Low confidence, running double-check", { requestId, confidence: firstPass.confidence });
 
       const reviewPrompt = `Zkontroluj a vylepši tento výstup analýzy e-mailu.
@@ -302,7 +275,7 @@ Pokud něco nesedí, oprav to. Odpověz POUZE validním JSONem.`;
     }
 
     const latency = Date.now() - startTime;
-    logClassification(requestId, model, finalResult.action, finalResult.confidence);
+    logClassification(requestId, model, finalResult.action as string, finalResult.confidence as number);
     log("info", "Analysis complete", { requestId, model, latencyMs: latency, action: finalResult.action, confidence: finalResult.confidence });
 
     // Override the model's self-reported aiSeconds with the real measured

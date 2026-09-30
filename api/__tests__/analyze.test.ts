@@ -55,7 +55,7 @@ const baseInput = {
 describe('api/analyze.ts — double-check logika', () => {
   beforeEach(() => {
     vi.unstubAllGlobals();
-    delete process.env.OLLAMA_API_KEY;
+    process.env.OLLAMA_API_KEY = "test-key";
   });
 
   it('spustí druhé volání (double-check), když confidence < 0.80', async () => {
@@ -151,7 +151,7 @@ describe('api/analyze.ts — double-check logika', () => {
 describe('api/analyze.ts — klasifikační log', () => {
   beforeEach(() => {
     vi.unstubAllGlobals();
-    delete process.env.OLLAMA_API_KEY;
+    process.env.OLLAMA_API_KEY = "test-key";
   });
 
   it('zaloguje klasifikaci s requestId, model, akce a confidence', async () => {
