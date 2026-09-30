@@ -24,7 +24,7 @@ export class AnalysisError extends Error {
 }
 
 export class ApiEmailAnalyzer implements EmailAnalyzer {
-  constructor(private modelName: string = "gemma4:31b") {}
+  constructor(private modelName: string = "deepseek-v4.1-flash") {}
 
   async analyze(input: EmailInput): Promise<AnalysisResult> {
     const base = import.meta.env.BASE_URL || '/';

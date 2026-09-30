@@ -1,6 +1,6 @@
 # Karel Robot — AI e-mailový administrátor
 
-Interaktivní webová aplikace, která simuluje AI zaměstnance zpracovávajícího příchozí zákaznické e-maily v českém prostředí. Demo běží na dvou režimech: (a) lokální simulovaný analyzátor (`local-demo`) bez externích závislostí, (b) reálný LLM routing přes Ollama Cloud (modely `gemma4:31b`, `minimax-m3`, `kimi-k2.7-code` apod.) schovaný za Vercel serverless funkcí.
+Interaktivní webová aplikace, která simuluje AI zaměstnance zpracovávajícího příchozí zákaznické e-maily v českém prostředí. Demo běží na dvou režimech: (a) lokální simulovaný analyzátor (`local-demo`) bez externích závislostí, (b) reálný LLM routing přes Ollama Cloud (modely `deepseek-v4.1-flash`, `minimax-m3`, `kimi-k2.7-code` apod.) schovaný za Vercel serverless funkcí.
 
 > **Aktuální stav (ověřeno 2026-08-31):** build prochází (`npm run build`), **`npm run lint` (tsc --noEmit) prochází** a **testy procházejí** (`npm test` — 21 testů, 4 soubory). Podrobný faktický stav: [`planner/state.md`](planner/state.md).
 
@@ -42,7 +42,7 @@ dev-docs.md, user-guide.md (CZ dokumentace pro vývojáře a uživatele)
 
 ## Konfigurace
 - `OLLAMA_API_KEY` — povinný pro reálný LLM routing. Demo režim funguje bez klíče.
-- Model se vybírá v UI (AppHeader → Settings) ze seznamu povolených v `api/models.ts`. Povolené: `nemotron-3-nano:30b`, `gemma4:31b`, `minimax-m3`, `minimax-m2.7`, `glm-5.1`, `glm-5.2`, `kimi-k2.6`, `kimi-k2.7-code`, `gpt-oss:20b`.
+- Model se vybírá v UI (AppHeader → Settings) ze seznamu povolených v `api/models.ts`. Povolené: `nemotron-3-nano:30b`, `deepseek-v4.1-flash`, `minimax-m3`, `minimax-m2.7`, `glm-5.1`, `glm-5.2`, `kimi-k2.6`, `kimi-k2.7-code`, `gpt-oss:20b`.
 
 ## Spuštění lokálně
 

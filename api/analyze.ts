@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 
-const OLLAMA_API_URL = "https://ollama.com/api/v1/chat/completions";
+const OLLAMA_API_URL = "https://ollama.com/v1/chat/completions";
 const OLLAMA_FALLBACK_URL = "https://ollama.com/api/generate";
 // Main call: up to 55s (under Vercel's 60s maxDuration) — some cloud tags
 // Cloud tags can be slow; we keep a generous timeout.
@@ -141,7 +141,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const model = req.body?.model || "gemma4:31b";
+    const model = req.body?.model || "deepseek-v4.1-flash";
     const { input } = req.body;
     const apiKey = process.env.OLLAMA_API_KEY;
 
